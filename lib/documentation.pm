@@ -1,3 +1,9 @@
+# @author Raymond Byczko
+# @file documentation.pm
+# @location perl-self/lib
+# @purpose To provide a perl class for processing documentation.
+# @start_date 2016-08-21 August 21, 2016
+
 package documentation;
 
 # @comment A note about attributes.  These are used to denote documentation in source
@@ -51,6 +57,15 @@ sub add_attribute {
 # that file, per the attributes already added via add_attribute.
 sub extract {
 	my ($self, $path_name) = @_;
+	print 'extract:start'."\n";
+	unless (open(FILE_H,'<'.$path_name)) {
+		die 'Unable to open '.$path_name."\n";
+	}
+	while (<FILE_H>) { 
+		my $current_line = $_;	
+		print 'current_line='.$current_line."\n";
+	}
+	close(FILE_H);
 	
 }
 
