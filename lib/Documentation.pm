@@ -1,14 +1,10 @@
 # @author Raymond Byczko
-# @company self
 # @file documentation.pm
 # @location perl-self/lib
 # @purpose To provide a perl class for processing documentation.
-# @start_date 2016-08-20 August 20, 2016
-# @change_history RByczko, 2016-08-21, August 21, 2016, Made this file obsolete.
-# Use Documentation.pm instead.
-die "Use the fle documentation.pm instead.  This one is obsolete.";
+# @start_date 2016-08-21 August 21, 2016
 
-package documentation;
+package Documentation;
 
 # @comment A note about attributes.  These are used to denote documentation in source
 # files.  As such they can be picked up by documentation parsers, like this one
@@ -26,9 +22,9 @@ our @EXPORT_OK = qw();
 
 sub new {
 	my ($class) = @_;
-	my $attributes = {};
+	my $attributes_href = {};
 	my $new_obj = {
-		attributes=>$attributes
+		"attributes"=>$attributes_href
 	};
 	my $self = bless $new_obj, $class;
 	return $self;
@@ -54,7 +50,7 @@ sub add_attribute {
 		end=>$end_attribute,
 		max_lines=>$max_lines
 	};
-	$self->attributes->$start_attribute = $new_attribute;
+	$self->{attributes}->{$start_attribute} = $new_attribute;
 }
 
 # Extracts from the file indicating the documenation found in
