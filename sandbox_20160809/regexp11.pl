@@ -4,7 +4,9 @@
 # @start_date 2016-08-11 August 11, 2016
 # @purpose Lets test character class abbreviations, namely backslash d.
 # @note Also experiment with grouping metacharacters '()' and special variables $1, $2 etc
-# @note Works as expected. 
+# @note Works as expected but with some flaw/success in 6th part.
+# @change_history RByczko, 2016-08-20, Adjusted 6th regexp trying different techniques.
+
 use strict;
 print 'START: regexp11.pl'."\n";
 
@@ -92,28 +94,59 @@ else
 	print "... comment comment not detected (NOT EXPECTED)"."\n";
 }
 
-
+print 'doing 6th regexp...'."\n";
 my $numberLine6a = 'This is a non comment line, 6a'."\n";
 my $numberLine6b = 'This is a non comment line, 6b'."\n";
-my $numberLine6c = ' @comment This is some multi-line comment'."\n";
-my $numberLine6d = 'that has this second line'."\n";
-my $numberLine6e = 'and ends on this third line@endcomment'."\n";
+my $numberLine6c = ' @comment This is some multi-line comment 6c'."\n";
+my $numberLine6d = 'that has this second line 6d'."\n";
+my $numberLine6e = 'and ends on this third line 6e@endcomment'."\n";
 my $numberLine6f = 'This is a non comment line, 6f'."\n";
 my $numberLine6g = 'This is a non comment line, 6g'."\n";
+my $numberLine6h = '@comment This is a single liner 6h @endcomment'."\n";
+my $numberLine6i = '@comment This is a single liner 6i@endcomment'."\n";
 
-my @numberLineArray6 = (\$numberLine6a, \$numberLine6b, \$numberLine6c, \$numberLine6d, \$numberLine6e, \$numberLine6f, \$numberLine6g);
+my @numberLineArray6 = (\$numberLine6a, \$numberLine6b, \$numberLine6c, \$numberLine6d, \$numberLine6e, \$numberLine6f, \$numberLine6g, \$numberLine6h, \$numberLine6i);
 foreach my $line6ref (@numberLineArray6) {
 	if ($$line6ref =~ /(\@comment)\s(.*)(\@endcomment)/)
 	{
+		# sl seems to be picked up well.
 		# singleline comment - process and continue
+		# @comment and @endcomment on same line.
+		print '... found singleline (sl):'.$$line6ref."\n";
+		print '... ... the comment is (sl):'.$2.'END'."\n";
 	}
 	if ($$line6ref =~ /(\@comment)\s(.*)(\@endcomment){0}/)
 	{
+		# ml1 does not work well.  Its picking up @endcomment for some reason.
 		# start of multi line comment - process and continue
+		# @comment on line but no @endcomment.
+		print '... found multiline (ml1):'.$$line6ref."\n";
+	}
+	if ($$line6ref =~ /\@comment/)
+	{
+		if ($$line6ref !~ /\@endcomment/)
+		{
+			# ml2 seems to work well.
+			# start of multi line comment - process and continue
+			# @comment on line but no @endcomment.
+			print '... found multiline (ml2):'.$$line6ref."\n";
+		}
 	}
 	if ($$line6ref =~ /(\@comment){0}\s(.*)(\@endcomment){0}/)
 	{
+		# nc is working very poorly.  Picking up lots of lines it was not
+		# intended to.
 		# no comment labels - process and continue
+		print '... found no comments (nc):'.$$line6ref."\n";
+	}
+	if ($$line6ref !~ /\@comment/)
+	{
+		if ($$line6ref !~ /\@endcomment/)
+		{
+			# 2if seems to work well.
+			# no comment labels - process and continue
+			print '... found no comments (2if):'.$$line6ref."\n";
+		}
 	}
 
 }
