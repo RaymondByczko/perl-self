@@ -69,4 +69,16 @@ sub extract {
 	
 }
 
+# Gets the valid attributes for this Documentation object.
+# It basically gets the keys for each attribute.  This represents
+# the start_attribute for each attribute.
+sub get_attributes {
+	my ($self) = @_;
+	my @attribute_start = keys $self->{attributes};
+	my $attr_all = join ':', @attribute_start;
+	# print 'All attribute_start are:'.@attribute_start."\n";
+	print 'All attribute_start are:'.$attr_all."\n";
+	return @attribute_start;
+}
+
 1;
