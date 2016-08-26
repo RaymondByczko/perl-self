@@ -15,3 +15,9 @@ and called there, with the my declared var outside.
 
 test_my03.pl: nested lexical scopes with curly brackets and vars
 declared with my.
+
+test_local01a.pl: tests how local can be applied to an outerscope
+defined my variable.
+
+test_local01b.pl: a variant of test_local01a.pl.  Tests how local can
+be applied to an outerscope global variable.
