@@ -21,3 +21,10 @@ defined my variable.
 
 test_local01b.pl: a variant of test_local01a.pl.  Tests how local can
 be applied to an outerscope global variable.
+
+test_gd01.pl: a test for module GD - interface to Gd Graphics Library.
+Associated with this perl script is a JPG, seaweed.JPG .
+
+test_carp01.pl: tests how carp works.
+test_warn01.pl: tests how warn works.
+test_carp01.pl and testwarn01.pl is a pair for compare and contrast.
