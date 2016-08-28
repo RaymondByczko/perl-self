@@ -1,5 +1,16 @@
 #!/usr/bin/perl
+# @file gdbrighten.pl
+# @location perl-self/scripts/
+# @company self
+# @author Raymond Byczko
+# @start_date 2016-08-27 August 27, 2016
+# @purpose To offer a command line utility for processing graphic files,
+# notably, JPG.
+# @note This utility is inspired by a test perl script:
+# @reference perl-self/sandbox_20160824/test_gd01.pl
 # @change_history 2016-08-27, RByczko, Added color flag processing.
+# @change_history 2016-08-28, RByczko, Added file documentation.
+# Fixed bug regarding threshold.
 use strict;
 use Getopt::Long;
 use GD;
@@ -55,7 +66,7 @@ for (my $x=1;$x <= $w; $x++)
 				$colorAll = $outim->colorAllocate($rc,$gc,253);
 			}
 		}
-		if ($rc < $threshold)
+		if ($rc <= $threshold)
 		{
 			$colorAll = $outim->colorAllocate($rc,$gc,$bc);
 		}
