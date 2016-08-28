@@ -1,4 +1,5 @@
 #!/usr/bin/perl
+# @change_history 2016-08-27, RByczko, Added color flag processing.
 use strict;
 use Getopt::Long;
 use GD;
@@ -16,7 +17,6 @@ GetOptions(
 ) or die ('Error in command line arguments'."\n");
 
 GD::Image->trueColor(1);
-# my $image = GD::Image->new('./seaweed.JPG');
 my $image = GD::Image->new($input_file);
 my ($w, $h) = $image->getBounds();
 # print '... w='.$w."\n";
@@ -33,17 +33,34 @@ for (my $x=1;$x <= $w; $x++)
 		# print '... ...r='.$rc."\n";
 		# print '... ...g='.$gc."\n";
 		# print '... ...b='.$bc."\n";
-		my $color;
-		if ($rc > $threshold)
+		my $colorAll;
+		if ($color eq 'red')
 		{
-			$color = $outim->colorAllocate(253,$gc,$bc);
+			if ($rc > $threshold)
+			{
+				$colorAll = $outim->colorAllocate(253,$gc,$bc);
+			}
 		}
-		else
+		if ($color eq 'green')
 		{
-			$color = $outim->colorAllocate($rc,$gc,$bc);
+			if ($rc > $threshold)
+			{
+				$colorAll = $outim->colorAllocate($rc,253,$bc);
+			}
 		}
-        $outim->setPixel($x-1,$y-1,$color);
-		$outim->colorDeallocate($color);
+		if ($color eq 'blue')
+		{
+			if ($rc > $threshold)
+			{
+				$colorAll = $outim->colorAllocate($rc,$gc,253);
+			}
+		}
+		if ($rc < $threshold)
+		{
+			$colorAll = $outim->colorAllocate($rc,$gc,$bc);
+		}
+        $outim->setPixel($x-1,$y-1,$colorAll);
+		$outim->colorDeallocate($colorAll);
 	}
 }
 binmode STDOUT;
