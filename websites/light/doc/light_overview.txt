@@ -1,0 +1,37 @@
+The light website offers processing of JPG images.
+It offers a variety of services to do various operations.
+
+one-to-many increasing threshold
+--------------------------------
+
+One functionality is to take a JPG and adjust a color component,
+say red, to produce a series of JPGs.  The adjustment will involve
+setting the color component of interest to some preset value.
+The adjustment is for all pixels above a certain threshold.  The threshold
+goes from some start value to some end value, with each value of threshold
+producing its own JPG image.  The number of JPGs produced is equal
+to: (end value - start value + 1).
+
+The start
+value is between 0 and 255.  The same range applies to the end
+value, except the start value must be less than the end value.
+
+The amount of increase
+
+So this is how it works.  Do the following for each value of
+threshold from start to end. Take the original JPG and do an x,y scan, noting
+each pixel were the color component is at or above the current threshold.
+Reset that pix such that the color component is the preset value.  Do for
+all applicable pixels.  This produces a new JPG.  It can be named
+original.<start>.jpg
+
+Consider then the next value of threshold, calling it the current
+threshold.  Do the same scan against the original, peforming the comparison, which will indicate
+applicable pixels.  Again a new JPG is produced, which can be named
+original.<start + 1>.jpg. 
+
+Using the same process, the last jpg to be produced by this process is
+original.<end>.jpg.
+
+
+
