@@ -1,0 +1,117 @@
+The light website offers processing of JPG images.
+It offers a variety of services to do various operations.
+
+one-to-many increasing threshold
+--------------------------------
+
+One functionality is to take a JPG and adjust a color component,
+say red, to produce a series of JPGs.  The adjustment will involve
+setting the color component of interest to some preset value.
+The adjustment is for all pixels above a certain threshold.  The threshold
+goes from some start value to some end value, with each value of threshold
+producing its own JPG image.  The number of JPGs produced is equal
+to: (end value - start value + 1).
+
+The start
+value is between 0 and 255.  The same range applies to the end
+value, except the start value must be less than the end value.
+
+The amount of increase
+
+So this is how it works.  Do the following for each value of
+threshold from start to end. Take the original JPG and do an x,y scan, noting
+each pixel were the color component is at or above the current threshold.
+Reset that pix such that the color component is the preset value.  Do for
+all applicable pixels.  This produces a new JPG.  It can be named
+original.<start>.jpg
+
+Consider then the next value of threshold, calling it the current
+threshold.  It is one more than the previous threshold. 
+Do the same scan against the original, peforming the comparison, which will indicate
+applicable pixels.  Again a new JPG is produced, which can be named
+original.<start + 1>.jpg. 
+
+Using the same process, the last jpg to be produced by this process is
+original.<end>.jpg.
+
+Each jpg produced has a threshold that is one more than that used for the
+previous jpg.  As the threshold is increased, the amount of pixels impacted
+is decreased.  Eventually no pixels are impacted, and the new jpg is just
+a copy of the original.
+
+one-to-many decreasing threshold
+--------------------------------
+
+This is the reverse of 'one-to-many increasing threshold'.  Accordingly, 
+the start value is greater than the end value, in terms of threshold
+values used.  Thus initially the threshold is set to a higher value, implying
+fewer pixels are impacted.  As each jpg is produced, a smaller value
+of threshold is utilized, thus impacting larger and larger number of pixels.
+The impact area increases in this way, so the impression of the produced
+jpgs goes from no change to slight change to modest change, and lastly, to
+lots of change.
+
+one-to-many decreasing threshold, step value greater than 1.
+------------------------------------------------------------
+
+This is a variant of 'one-to-many decreasing threshold' except that a step
+value greater than one is used, rather than having it equal to one.
+What does this produce.
+
+First of all, since the step is greater than 1, this means less jpgs are
+produced.  Second of all, the rate of change of impacted pixels is larger.
+It is possible to see the effect faster in this way.
+
+website directory considerations
+--------------------------------
+
+The light website needs to have directory areas for storing the original JPG
+and the JPGs that are generated from it.
+
+Lets consider some of the factors for how these directories are named.
+
+First, a user generally selects a function, like 'one-to-many decreasing
+threshold', specifies start and end values for threshold, and uploads the image.
+
+A job number is used to designate the use of any function.  It is comprised
+of a date and time, like YYYYMMDD-HHMMSS.  It is unlikely but not impossible
+two jobs can be submitted at the same time, so a random number, 'job token' is
+also utilized.  And so the complete job number is as follows:
+
+YYYYMMDD-HHMMSS-RANDOM
+
+Another designation that is helpful is the abbreviation used for each
+function.  For example, 'one-to-many decreasing threshold' might be
+abbreviated as 'o-m-d-t'.  This can be used in the website storage directory
+to help sort and find jobs.
+
+Lastly, a higher level directory component might be 'working-area', to indicate
+files are stored here during processing (that is when the function is working).
+
+All of the above considerations might be combined to yield a path like:
+
+working-area/o-m-d-t/YYYYMMDD-HHMMSS-RANDOM/
+
+
+getting the results
+-------------------
+
+It takes about 20 seconds per JPG to perform an operation on an approximately 4 million
+pixel image.  @todo verify this.  This being the case, upon adjustment of
+settings and uploading of the image, it can take a while for the result to finish.
+If the total JPGs that will be produced is say 30, then thats 600 seconds or 10 minutes.
+
+The notification of the results are probably best done asynchronously. An estimate
+can be derived and the amount of expected time can be indicated to the user.  The
+user can then check back at that point. 
+
+One possible solution is to give the RANDOM number generated to the user
+immediately and to have the user indicate that RANDOM number later, to see if the
+function is complete.  If complete, the user can be advised to go to the appropriate
+URL.
+
+The results are likely to take considerable space.  And so, a cron job can run to
+remove results periodically.
+
+setting the
+
