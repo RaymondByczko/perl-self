@@ -3,6 +3,8 @@
 # @location perl-self/lib
 # @purpose To provide a perl class for processing documentation.
 # @start_date 2016-08-21 August 21, 2016
+# @change_history 2016-08-23 August 23, 2016, Started process attribute
+# documentation.
 
 package Documentation;
 
@@ -80,5 +82,57 @@ sub get_attributes {
 	print 'All attribute_start are:'.$attr_all."\n";
 	return @attribute_start;
 }
+
+# This sub assigns the case short name to each attribute
+# depending on the values of the start_attribute, end_attribute,
+# and max_lines.
+sub assign_short_name {
+}
+
+# process each attribute, given a line
+#
+#
+
+# start_attribute!="", end_attribute=="", max_lines==1
+# ---------------------------------------------------- 
+# case short name: START_ONLY
+# valid states: NOT_ENCOUNTERED, ENCOUNTERED_START
+#
+# start_attribute!="", end_attribute!="", max_lines==1
+# ---------------------------------------------------- 
+# case short name: START_END_ONE_LINE
+# valid states: NOT_ENCOUNTERED, ENCOUNTERED_START,
+# ENCOUNTERED_END
+#
+# start_attribute!="", end_attribute!="", max_lines>1
+# ---------------------------------------------------- 
+# case short name: START_END_MULTI_LINE
+# valid states: NOT_ENCOUNTERED, ENCOUNTERED_START,
+# ENCOUNTERED_END
+#
+
+# ... start_attribute!="", end_attribute=="", max_lines==1
+#
+# get attribute
+# ... get start_attribute
+# ... get end_attribute
+# ... get max_lines
+#
+# ... get case short name
+# ... if short name == START_ONLY then
+# ... {
+#		if state[attribute] == NOT_ENCOUNTERED then
+#		{
+#		}
+# ... }
+# ... if short name == START_END_ONE_LINE then
+# ... {
+# ... }
+# ... if short name == START_END_MULTI_LINE then
+# ... {
+# ... }
+#
+# ... if state[attribute] == 
+# ... start_attribute!="", end_attribute=="", max_lines==1
 
 1;
