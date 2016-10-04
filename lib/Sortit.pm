@@ -3,6 +3,11 @@
 # @location perl-self/lib
 # @purpose To provide a perl class for sorting - quick, shell sort etc.
 # @start_date 2016-10-03 October 21, 2016
+# @change_history 2016-10-04 October 4, 2016, Started shell sort.
+# It appears to be a bit buggy as indicated in Sedgewick's book.
+# The wiki entry below seems useful for fixing this:
+# en.wikipedia.org/wiki/Shellsort.
+
 
 package Sortit;
 
@@ -96,5 +101,44 @@ sub quicksort {
 	}
 
 	print '... quicksort::end'."\n";
+}
+
+# This shellshort implementation was derived from 'Algorithms in C' by
+# Robert Sedgewick.  See p. 109.
+sub shellsort {
+	use integer;
+	my ($self, $refArray) = @_;
+	my %self = %$self;
+	print '... shellsort::start'."\n";
+	my $sizeArray = @$refArray + 0; #length of array
+	print '... ... sizeArray='.$sizeArray."\n";
+	# $sizeArray--;
+
+	my $i;
+	my $j;
+	my $h;
+	my $v;
+	# This finds a max value for $h.
+	for ($h = 1; $h <= $sizeArray/9; $h = 3*$h + 1){};
+	print '... ... h='.$h."\n";
+
+	for (; $h > 0; $h /= 3)
+	{
+		print '... ... ... h (loop)='.$h."\n";
+		for ($i = $h-1; $i <= ($sizeArray-1); $i +=1)
+		{
+			$v = $refArray->[$i];
+			$j = $i;
+			while (($j>=$h) && ($refArray->[$j-$h]>$v))
+			{
+				$refArray->[$j] = $refArray->[$j-$h];
+				$j -= $h;
+			}
+			$refArray->[$j] = $v;
+		}
+	}
+
+	print '... shellsort::end'."\n";
+	no integer;
 }
 1;
