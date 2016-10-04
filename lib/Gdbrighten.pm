@@ -8,6 +8,7 @@
 # @note This utility is inspired by a perl script:
 # @reference perl-self/scripts/Gdbrighten.pm
 # @change_history 2016-08-31, RByczko, Started this file.
+# @change_history 2016-09-04, RByczko, Added extract_pixel_data.
 
 package Gdbrighten;
 
@@ -132,5 +133,55 @@ sub one_to_many {
 		my $threshold = $current_value;
 		Gdbrighten::modify_one($color, $threshold, $new_intensity, $input_file, $output_file);
 	}
+}
+
+# This subroutine reads from a JPG file and extracts pixel data, for one particular
+# color.  The data is characterised by the pixel value from 0 to 254.  Each pixel value
+# is presented by an array.  An element in an array is the pair of coordinates that match
+# the pixel value.  The pair is (x,y).
+sub extract_pixel_data {
+	my ($input_file) = @_;
+	print 'extract_pixel_data:START'."\n";
+	print '... input_file='.$input_file."\n";
+
+	my $ref_r_output = []; # empty array (red).
+	my $ref_g_output = []; # empty array (green).
+	my $ref_b_output = []; # empty array (blue).
+
+	# setup the hash return value.
+	my $ret_all = { 'red'=>$ref_r_output, 'green'=>$ref_g_output, 'blue'=>$ref_b_output };
+
+	for (my $i=$Gdbright::min_color; $i<=$Gdbright::max_color; $i++)
+	{
+
+		push @{$ref_r_output}, []; #assign subarray - one for each pixel intensity.
+		push @{$ref_g_output}, []; #assign subarray - one for each pixel intensity.
+		push @{$ref_b_output}, []; #assign subarray - one for each pixel intensity.
+
+		# ${@{$ref_r_output}}[$i] = (); #assign subarray - one for each pixel intensity.
+		# ${@$ref_g_output}[0] = (); #assign subarray - one for each pixel intensity.
+		# ${@$ref_b_output}[0] = (); #assign subarray - one for each pixel intensity.
+	}
+	GD::Image->trueColor(1);
+	my $image = GD::Image->new($input_file);
+	my ($w, $h) = $image->getBounds();
+	for (my $x=1;$x <= $w; $x++)
+	{
+		for (my $y=1; $y <= $h; $y++)
+		{
+			print 'x='.$x.', y='.$y."\n";
+			my $index = $image->getPixel($x-1,$y-1);
+			my ($rc,$gc,$bc) = $image->rgb($index);
+			# print '... ...r='.$rc."\n";
+			# print '... ...g='.$gc."\n";
+			# print '... ...b='.$bc."\n";
+			my @new_point = ($x, $y);
+			push @$ref_r_output[$rc], \@new_point;
+			# push @{$ref_g_output}[$gc], ($x,$y);
+			push @$ref_g_output[$gc], \@new_point;
+			push @$ref_b_output[$bc], \@new_point;
+		}
+	}
+	return $ret_all;
 }
 1;
