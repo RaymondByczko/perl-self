@@ -25,8 +25,10 @@ our @EXPORT_OK = qw();
 sub new {
 	my ($class) = @_;
 	my $attributes_href = {};
+	my $short_names_href = {};
 	my $new_obj = {
-		"attributes"=>$attributes_href
+		"attributes"=>$attributes_href,
+		"short_name"=>$short_names_href
 	};
 	my $self = bless $new_obj, $class;
 	return $self;
@@ -87,6 +89,28 @@ sub get_attributes {
 # depending on the values of the start_attribute, end_attribute,
 # and max_lines.
 sub assign_short_name {
+	my ($self) = @_;
+	my @attribute_starts = keys $self->{attributes};
+	foreach my $attr (@attribute_starts) {
+		my $start_attribute = $self->{attributes}->{$attr}->{start};
+		my $end_attribute = $self->{attributes}->{$attr}->{end};
+		my $max_lines = $self->{attributes}->{$attr}->{max_lines};
+		if (($start_attribute ne "") && ($end_attribute eq "") && ($max_lines == 1))
+		{
+			$self->{short_name}->{$attr} = 'START_ONLY'; 
+			next;
+		}
+		if (($start_attribute ne "") && ($end_attribute ne "") && ($max_lines == 1))
+		{
+			$self->{short_name}->{$attr} = 'START_END_ONE_LINE'; 
+			next;
+		}
+		if (($start_attribute ne "") && ($end_attribute ne "") && ($max_lines > 1))
+		{
+			$self->{short_name}->{$attr} = 'START_END_MULTI_LINE'; 
+			next;
+		}
+	}
 }
 
 # process each attribute, given a line
@@ -102,7 +126,7 @@ sub assign_short_name {
 # ---------------------------------------------------- 
 # case short name: START_END_ONE_LINE
 # valid states: NOT_ENCOUNTERED, ENCOUNTERED_START,
-# ENCOUNTERED_END
+# ENCOUNTERED_END, ENCOUNTERED_START_END
 #
 # start_attribute!="", end_attribute!="", max_lines>1
 # ---------------------------------------------------- 
@@ -123,10 +147,45 @@ sub assign_short_name {
 # ... {
 #		if state[attribute] == NOT_ENCOUNTERED then
 #		{
+#			do regexp with start_attribute
+#			if start_attribute encountered
+#			{
+#				state[attribute] = ENCOUNTERED_START
+#				return
+#			}
+#		}
+#		if state[attribute] == ENCOUNTERED_START then
+#		{
+#			state[attribute] = NOT_ENCOUNTERED
+#			return
 #		}
 # ... }
 # ... if short name == START_END_ONE_LINE then
 # ... {
+#		if state[attribute] == NOT_ENCOUNTERED then
+#		{
+#			do regexp with start_attribute,end_attribute
+#			if start_attribute,end_attribute encountered
+#			{
+#				state[attribute] = ENCOUNTERED_START_END 
+#				record state[attribute]
+#				state[attribute] = NOT_ECOUNTERED
+#				record state[attribute]
+#			}
+#			return
+#		}
+#		if state[attribute] = ENCOUNTERED_START_END
+#		{
+#			do regexp with start_attribute,end_attribute
+#			if start_attribute,end_attribute encountered
+#			{
+#				state[attribute] = ENCOUNTERED_START_END 
+#				record state[attribute]
+#				state[attribute] = NOT_ECOUNTERED
+#				record state[attribute]
+#			}
+#			return
+#		}
 # ... }
 # ... if short name == START_END_MULTI_LINE then
 # ... {
