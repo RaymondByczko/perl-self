@@ -3,6 +3,8 @@
 # @location perl-self/lib
 # @purpose To provide a perl class for polling the web.
 # @start_date 2016-09-21 September 21, 2016
+# @change_history RByczko, 2016-10-13 October 13, 2016,  Added
+# post_enc to each element that is produced as a result of a poll.
 
 package Webpoll;
 use overload '""' =>"webpollstring";
@@ -65,7 +67,8 @@ sub poll {
 		my $ret_element = {
 			'ct'=>$ct,
 			'sha'=>$content_sha,
-			'length'=>$len_content
+			'length'=>$len_content,
+			'post_enc'=>$post_enc
 		};
 		push @$ret_value, $ret_element;
 
