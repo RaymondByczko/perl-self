@@ -6,6 +6,9 @@
 # @change_history RByczko; 2016-10-17 October 17, 2016; Started this file.
 # See p. 100, Diary #7.
 # @change_history RByczko; 2016-10-17 October 17, 2016; Adjust overload for string.
+# @change_history RByczko; 2016-10-17 October 17, 2016, Removed methods:
+# comment_symbol, set_comment_symbol.  These are used in config via Gitshapostconfig.
+# No need for them here.
 
 
 package Gitshapost;
@@ -116,16 +119,6 @@ sub set_config {
 	print '... set_config::end'."\n";
 }
 
-# A config file can contain comment lines which is a nice thing.
-sub comment_symbol {
-	my ($self) = @_;
-	return $self->{'comment_symbol'};
-}
-
-sub set_comment_symbol {
-	my ($self, $new_comment_symbol) = @_;
-	$self->{'comment_symbol'} = $new_comment_symbol;
-}
 
 # This method overloads a Gitshapostconfig object when it is used in
 # a string.
