@@ -9,6 +9,8 @@
 # @change_history RByczko; 2016-10-17 October 17, 2016, Removed methods:
 # comment_symbol, set_comment_symbol.  These are used in config via Gitshapostconfig.
 # No need for them here.
+# @change_history RByczko; 2016-10-18 October 18, 2016; Composed $url_for_check.
+# Added xmlpoll.
 
 
 package Gitshapost;
@@ -16,6 +18,7 @@ use overload '""' =>"gitshapoststring";
 # use File::Copy;
 # use File::Basename;
 use Cwd qw(realpath);
+use WWW::Mechanize;
 
 use strict;
 require Exporter;
@@ -92,6 +95,20 @@ sub process_file {
 	my $relative_part_start = $pos + $len_loc_base;
 	my $relative_part = substr $abs_path, $relative_part_start;
 	print '... ... relative_part='.$relative_part."\n";
+	# Trying to avoid long variable names in the following fragment.
+	# See p. 99,100 Diary #7
+	#	W stands for config.checked_website - the website to check
+	#	L stands for config.utility_location - the url with respect to checked_website that serves to check code.
+	#	P stands for config.utility_page - the page itself to checked deployed files against repo.
+	#	G stands for config.utility_get - the get parameter used.
+	my $W = $self->{'config'}->{'checked_website'};
+	my $L = $self->{'config'}->{'utility_location'};
+	my $P = $self->{'config'}->{'utility_page'};
+	my $G = $self->{'config'}->{'utility_get'};
+	my $url_for_check = $W.$L.'/'.$P.'?'.$G.'='.$relative_part;
+	my $xml_remote_file = $self->xml_poll($url_for_check);
+	print '... ... url_for_check='.$url_for_check."\n";
+	return $xml_remote_file;
 	print '... process_file::end'."\n";
 }
 
@@ -119,6 +136,30 @@ sub set_config {
 	print '... set_config::end'."\n";
 }
 
+# This method does a network call, to retrieve git sha information, on a requested page
+# within a monitored website.
+sub xml_poll {
+	my ($self, $polled_url) = @_;
+	print '... xmlpoll::start'."\n";
+	my $mech = WWW::Mechanize->new(autocheck=>1);
+	$mech->get($polled_url);
+	my $content = $mech->content;
+	my $len_content = length $content;
+	print 'len_content='.$len_content."\n";
+	my $post_enc;
+	if (utf8::is_utf8($content))
+	{
+		print '... content is utf8 encoded'."\n";
+		$post_enc = Encode::encode_utf8($content);
+	}
+	else
+	{
+		print '... content is not utf8 encoded'."\n";
+		$post_enc = $content;
+	}
+	print '... xmlpoll::end'."\n";
+	return $post_enc;
+}
 
 # This method overloads a Gitshapostconfig object when it is used in
 # a string.
