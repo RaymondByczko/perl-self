@@ -11,7 +11,10 @@
 # No need for them here.
 # @change_history RByczko; 2016-10-18 October 18, 2016; Composed $url_for_check.
 # Added xmlpoll.
-
+# @change_history RByczko; 2016-10-29 October 29, 2016; Added process_xml.
+# @change_history RByczko; 2016-11-17 November 17, 2016; Added relative_part.
+# @change_history RByczko; 2016-11-23 November 23, 2016; Migrate print debug
+# statements to logger. Done for: process_file.
 
 package Gitshapost;
 use overload '""' =>"gitshapoststring";
@@ -19,6 +22,14 @@ use overload '""' =>"gitshapoststring";
 # use File::Basename;
 use Cwd qw(realpath);
 use WWW::Mechanize;
+use XML::Twig;
+
+use Log::Log4perl qw(get_logger);
+
+# Log::Log4perl->init($GITSEARCH_HOME."/gitshapost.conf");
+my $logger = get_logger("Gitshapost");
+
+$logger->info('Gitshapost.pm-start');
 
 use strict;
 require Exporter;
@@ -33,6 +44,8 @@ our @EXPORT_OK = qw();
 # for example.
 sub new {
 	my ($class, $nameOfObject) = @_;
+
+	$logger->info('Gitshapost::new-start');
 	my $new_obj = {
 		'name_of_object'=>$nameOfObject,
 		'config'=>{},
@@ -69,32 +82,45 @@ sub new {
 
 # @purpose To process the file specified as the -f paremeter.
 # The argument given to -f is supplied for $a_file.
+# $a_file can be specified as absolute or relative.
 #
 sub process_file {
 	my ($self, $a_file) = @_;
 	my %self = %$self;
-	print '... process_file::start'."\n";
-	print '... ... a_file='.$a_file."\n";
+	$logger->info('Gitshapost::process_file-start');
+	# print '... process_file::start'."\n";
+	# print '... ... a_file='.$a_file."\n";
+
+	$logger->info('... a_file='.$a_file);
 	my $abs_path = realpath($a_file);
-	print '... ... abs_path='.$abs_path."\n";
+	# print '... ... abs_path='.$abs_path."\n";
+	$logger->info('... abs_path(realpath)='.$abs_path);
 	if (ref($self->{'config'}) ne 'Gitshapostconfig')
 	{
 		# unexpected.  Need a reference to a Gitshapostconfig stored under
 		# the config attribute of this Gitshapost object.
+		$logger->fatal('... need a reference to Gitshapostconfig');
+		$logger->fatal('... ... error condition-returning -1');
 		return -1; # @todo - consider throwing an exception here etc.
 	}
 	my $loc_base = $self->{'config'}->{'local_base'};
-	print '... ... loc_base='.$loc_base."\n";
+	# print '... ... loc_base='.$loc_base."\n";
+	$logger->info('... loc_base='.$loc_base);
 	my $pos = index $abs_path, $loc_base;
 	if ($pos == -1)
 	{
 		# unexpected.  The local_base in the Gitshapostconfig object might
 		# not be set properly.
+
+		$logger->fatal('... unexpected,pos='.$pos);
+		$logger->fatal('... ... error condition-returning -2');
+		return -2;
 	}
 	my $len_loc_base = length $loc_base;
 	my $relative_part_start = $pos + $len_loc_base;
 	my $relative_part = substr $abs_path, $relative_part_start;
-	print '... ... relative_part='.$relative_part."\n";
+	# print '... ... relative_part='.$relative_part."\n";
+	$logger->info('... relative_part='.$relative_part);
 	# Trying to avoid long variable names in the following fragment.
 	# See p. 99,100 Diary #7
 	#	W stands for config.checked_website - the website to check
@@ -106,8 +132,9 @@ sub process_file {
 	my $P = $self->{'config'}->{'utility_page'};
 	my $G = $self->{'config'}->{'utility_get'};
 	my $url_for_check = $W.$L.'/'.$P.'?'.$G.'='.$relative_part;
+	$logger->info('... url_for_check='.$url_for_check);
 	my $xml_remote_file = $self->xml_poll($url_for_check);
-	print '... ... url_for_check='.$url_for_check."\n";
+	# print '... ... url_for_check='.$url_for_check."\n";
 	return $xml_remote_file;
 	print '... process_file::end'."\n";
 }
@@ -160,6 +187,52 @@ sub xml_poll {
 	print '... xmlpoll::end'."\n";
 	return $post_enc;
 }
+
+# This method will process the result returned from xml_poll.
+# It puts relevant values into a hash. The keys of that hash
+# that is returned are: 
+#
+#	a) whoisreporting
+#	b) infoabout
+#	c) gitshavalue
+#	d) errorcode
+#	e) error_message
+#
+sub process_xml {
+	my ($self, $xml_poll) = @_;
+	print 'process_xml::start'."\n";
+	my $twigObj = XML::Twig->new();
+
+	$twigObj->parse($xml_poll);
+
+	my $eltWho = $twigObj->first_elt('whoisreporting');
+	my $whoisreporting = $eltWho->text;
+	my $eltInfoabout = $twigObj->first_elt('infoabout');
+	my $infoabout = $eltInfoabout->text;
+	my $eltGitsha = $twigObj->first_elt('gitshavalue');
+	my $gitshavalue = $eltGitsha->text;
+	my $eltErrorcode = $twigObj->first_elt('errorcode');
+	my $errorcode = $eltErrorcode->text;
+	my $eltError_message = $twigObj->first_elt('error_message');
+	my $error_message = $eltError_message->text;
+
+	print '... whoisreporting text='.$whoisreporting."\n";
+	print '... infoabout text='.$infoabout."\n";
+	print '... gitshavalue text='.$gitshavalue."\n";
+	print '... errorcode text='.$errorcode."\n";
+	print '... error_message text='.$error_message."\n";
+
+	my $ref_return = {
+		'whoisreporting'=>$whoisreporting,
+		'infoabout'=>$infoabout,
+		'gitshavalue'=>$gitshavalue,
+		'errorcode'=>$errorcode,
+		'error_message'=>$error_message
+	};
+	print 'process_xml::end'."\n";
+	return $ref_return;
+}
+
 
 # This method overloads a Gitshapostconfig object when it is used in
 # a string.
@@ -268,5 +341,30 @@ sub read {
 		}
 	}
 	close(FHS);
+}
+
+# relative_part: given a full path and a base path, this method
+# finds the relative path such that:
+#
+#	base_path + relative_path = full_path
+# @note This method does not depend on object state.  So it can be
+# considered a class method instead of an object method.
+sub relative_part {
+	my ($self, $full_path, $base_path) = @_;
+	print 'Gitshapost::relative_part-start'."\n";
+	print '... full_path='.$full_path."\n";
+	print '... base_path='.$base_path."\n";
+	my $pos = index $full_path, $base_path;
+	if ($pos == -1)
+	{
+		# unexpected
+		# @todo - exit premature or set relative_part to empty string?
+	}
+	my $len_base_path = length $base_path;
+	my $relative_part_start = $pos + $len_base_path;
+	my $relative_part = substr $full_path, $relative_part_start;
+	print '... ... relative_part='.$relative_part."\n";
+	print 'Gitshapost::relative_part-end'."\n";
+	return $relative_part;
 }
 1;
