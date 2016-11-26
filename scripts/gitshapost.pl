@@ -17,7 +17,12 @@
 # @change_history 2016-11-21, November 21, 2016.  Added env.  Added gitsearch.
 # Got the 'use lib' working with GITSEARCH_LIB.
 # The state of this file is still draft quality.
-
+# @change_history 2016-11-22, November 22, 2016.  Added GITBIN_LOCATION
+# env variable. Added Log4Perl.  Added BEGIN package constructor.
+# @change_history 2016-11-23, November 23, 2016.
+# Adjusted processing of return value for Gitshapost::process_file.
+# This is to reflect the change in its return type from a scalar to
+# a reference to a hash.
 
 use strict;
 use Modern::Perl;
@@ -25,6 +30,14 @@ use Getopt::Long;
 
 
 use Env qw(GITSEARCH_HOME GITSEARCH_LIB GITREPO_HOME GITBIN_LOCATION);
+BEGIN {
+	# print 'BEGIN-gitshapost.pl';
+	die 'GITSEARCH_HOME not defined. Do a: source gitshapostenv'."\n" unless defined($GITSEARCH_HOME); 
+	die 'GITSEARCH_LIB not defined. Do a: source gitshapostenv'."\n" unless defined($GITSEARCH_LIB); 
+	die 'GITREPO_HOME not defined. Do a: source gitshapostenv'."\n" unless defined($GITREPO_HOME); 
+	die 'GITBIN_LOCATION not defined. Do a: source gitshapostenv'."\n" unless defined($GITBIN_LOCATION); 
+	print 'BEGIN-gitshapost.pl-success';
+}
 print 'GITSEARCH_LIB:'.$GITSEARCH_LIB."\n";
 
 use lib (split ' ',$GITSEARCH_LIB);
@@ -38,6 +51,10 @@ use Log::Log4perl qw(get_logger);
 
 
 Log::Log4perl->init($GITSEARCH_HOME."/gitshapost.conf");
+my $logger = get_logger("main");
+
+
+$logger->info('gitshapost.pl-start');
 
 ### gitsearch ### 
 use gitsearch;
@@ -45,7 +62,7 @@ use gitsearch;
 # @todo The values in the following three set* calls should be retrieved
 # from a config file or from command line arguments.
 # (These calls are related to gitsearch)
-setgitlocation('/usr/bin/git');
+setgitlocation($GITBIN_LOCATION);
 setverbosity(1);
 setlengthgithash(40);
 ### gitsearch ###
@@ -76,12 +93,14 @@ print 'all='.$all."\n";
 print 'config_file='.$config_file."\n";
 if (($file_input eq "") && ($all == 0))
 {
+	$logger->info('... gitshapost.pl-need single file or all-exiting');
 	print 'Need to specify a single file or all'."\n";
 	print 'exiting'."\n";
 	exit(1); # non success
 }
 if (($file_input ne "") && ($all == 1))
 {
+	$logger->info('... gitshapost.pl-cannot specify single file and all-exiting');
 	print 'Cannot specify a single file and all at the same time.'."\n";
 	print 'Chose one or the other'."\n";
 	print 'exiting'."\n";
@@ -89,10 +108,12 @@ if (($file_input ne "") && ($all == 1))
 }
 if ($all == 1)
 {
+	$logger->info('... gitshapost.pl-start of all mode');
 	# We are in all mode.
 }
 if ($file_input ne "")
 {
+	$logger->info('... gitshapost.pl-start of single file mode');
 	# we are in single file mode.
 	my $nameGitsha = 'name:gitshapost::Gitshapost';
 	my $objGS = new Gitshapost($nameGitsha);
@@ -107,9 +128,16 @@ if ($file_input ne "")
 	# Process the file (retrieving details from across the web)
 	# (Looking at a deployed file.)
 	my $ret_pf = $objGS->process_file($file_input);
+	if ($ret_pf->{'ret_code'} < 0)
+	{
+		# error condition detected by process_file.
+		$logger->info('... gitshapost.pl-error with process_file');
+		$logger->info('... ... ret_pf->{"ret_code"}='.$ret_pf->{'ret_code'});
+		exit(1); # failure
+	}
 
 	# Do some XML processing
-	my $hashGitDetailsRemote = $objGS->process_xml($ret_pf);
+	my $hashGitDetailsRemote = $objGS->process_xml($ret_pf->{'xml_remote_file'});
 	
 	# See ~/git/git-php-rewrite/document_root/php-bin/gitshaxml.php
 	# gitshaxml.php is used for config.utility_page.
@@ -152,5 +180,5 @@ if ($file_input ne "")
 	}
 }
 
-	
+$logger->info('gitshapost.pl-normal exit');
 exit(0); # success
