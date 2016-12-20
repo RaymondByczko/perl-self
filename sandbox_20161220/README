@@ -1,0 +1,19 @@
+This directory contains tests for figuring out and learning
+prototypes in Perl 5.
+	* test_prototype01.pl - this perl file checks out with
+	'perl -c'.  However, run it with just 'perl' and notice
+	the run-time error that occurs.
+	* test_prototype01b.pl - this is a close cousin file to
+	test_prototype01.pl.  However, it changes one sub by
+	not assigning the array ref to an array.  Like its
+	relative, see what 'perl -c' produces for this file.
+	And then, check it out at run time with 'perl'.
+
+	* By doing the above for the two files indicated, you
+	will see how perls parser is modified with prototypes.
+	* Advice: do a 'diff' between test_prototype01.pl
+	and test_prototype01b.pl .
+	* Summary: \@ will convert a supplied array supplied
+	as, for example, @fruit_array, to a reference.  Its done
+	by the parser and not actively by the client code. Cool!
+RByczko, 2016-12-20
