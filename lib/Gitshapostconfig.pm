@@ -6,6 +6,9 @@
 # @start_date 2016-10-14 October 14, 2016
 # @change_history RByczko; 2016-10-15 October 15, 2016; Added gitshapostconfigstring.
 # See p. 100, Diary #7.
+# @change_history RByczko; 2016-10-16 October 16, 2016; Removed add_zone. (Artifact
+# of copy and past.  Zone is not a concept in git sha post config.)  Likewise for
+# in_zone.
 
 
 package Gitshapostconfig;
@@ -13,7 +16,7 @@ use overload '""' =>"gitshapostconfigstring";
 use File::Copy;
 use File::Basename;
 # use Shell qw(diff date);
-use Text::Diff;
+# use Text::Diff;
 
 use strict;
 require Exporter;
@@ -57,24 +60,6 @@ sub new {
 	return $self;
 }
 
-# @purpose To implement an add zone operation.  Every zone has
-# a start and end value.  Inclusive of this zone is implied
-# an area which will not be diffed.
-#
-sub add_zone {
-	my ($self, $new_zone) = @_;
-	my %self = %$self;
-	print '... add_zone::start'."\n";
-	my $zone_start = $new_zone->[0];
-	my $zone_end = $new_zone->[1];
-
-	print '... ... zone_start='.$zone_start."\n";
-	print '... ... zone_end='.$zone_end."\n";
-
-	push $self->{'zone'}, $new_zone;
-
-	print '... add_zone::end'."\n";
-}
 
 # The tmp_area is where newly created files are stored temporarily.
 # In the end, it is up to the client code to determine if these
@@ -192,19 +177,4 @@ sub read {
 	}
 	close(FHS);
 }
-
-sub in_zone {
-	my ($self, $lineNum) = @_;
-	foreach my $a_zone (@{$self->{'zone'}})
-	{
-		my $start_zone = $a_zone->[0];
-		my $end_zone = $a_zone->[1];
-		if (($lineNum>=$start_zone) && ($lineNum<=$end_zone))
-		{
-			return 1; # true
-		}
-	}
-	return 0; # false
-}
-
 1;
