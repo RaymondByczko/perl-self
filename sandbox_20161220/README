@@ -17,3 +17,19 @@ prototypes in Perl 5.
 	as, for example, @fruit_array, to a reference.  Its done
 	by the parser and not actively by the client code. Cool!
 RByczko, 2016-12-20
+
+Some other tests for learning Perl 5.
+
+	* test_prototype03.pl - explore the use of prototypes
+	and the difference between handing a prototyped sub
+	a) an array b) a reference to an array c) a reference
+	to an array that is dereferenced as an array. Case a
+	and case c work fine.  Case B generates compile error.
+	(Use 'perl -c') The error causing perl code is
+	clearly indicated with @COMP_ERROR_CAUSE.
+
+	* test_prototype02.pl - to explore the use of prototypes
+	and how they are called the old fashioned and new
+	fashioned ways.
+RByczko, 2016-12-22
+
