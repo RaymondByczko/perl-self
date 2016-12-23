@@ -8,3 +8,5 @@ Usually each sandbox area is named following the convention 'sandbox_YYYYMMDD'.
 Here is what each sandbox does.
 * sandbox_20160809 : this explores regexp per the perl documentation available via:
   perldoc perlrequick.
+* sandbox_20161220 : this explores prototypes for subroutines. A series of
+test scripts, each with a purpose and a conclusion.
