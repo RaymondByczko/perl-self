@@ -15,6 +15,15 @@
 # @change_history RByczko; 2016-11-17 November 17, 2016; Added relative_part.
 # @change_history RByczko; 2016-11-23 November 23, 2016; Migrate print debug
 # statements to logger. Done for: process_file.
+# @change_history RByczko; 2016-11-23 November 23, 2016; Changed return data type
+# for process_file from a scalar to a hash.  Improved type strictness because
+# the initial scalar implementation could contain an integer, in the event of
+# error, or a string, in the event of failure.  Such a polymorphic return type
+# is confusing.
+# @change_history RByczko;2016-12-23 December 23, 2016; Added logger calls to
+# replace print.
+# @change_history RByczko;2016-12-25 December 25, 2016; Added logger calls to
+# relative_part.
 
 package Gitshapost;
 use overload '""' =>"gitshapoststring";
@@ -84,10 +93,22 @@ sub new {
 # The argument given to -f is supplied for $a_file.
 # $a_file can be specified as absolute or relative.
 #
+# This method returns a reference to a hash which has
+# two keys: ret_code, xml_remote_file
+#
+# If the value associated with the ret_code is 0, then the
+# value associated with xml_remote_file is valid.
+# Otherwise, the value associated with xml_remote_file is not
+# valid.
+#
 sub process_file {
 	my ($self, $a_file) = @_;
 	my %self = %$self;
 	$logger->info('Gitshapost::process_file-start');
+	my $ret_ref = {
+		'ret_code'=>0,
+		'xml_remote_file'=>''
+	};
 	# print '... process_file::start'."\n";
 	# print '... ... a_file='.$a_file."\n";
 
@@ -101,7 +122,8 @@ sub process_file {
 		# the config attribute of this Gitshapost object.
 		$logger->fatal('... need a reference to Gitshapostconfig');
 		$logger->fatal('... ... error condition-returning -1');
-		return -1; # @todo - consider throwing an exception here etc.
+		$ret_ref->{'ret_code'} = -1;
+		return $ret_ref; # @todo - consider throwing an exception here etc.
 	}
 	my $loc_base = $self->{'config'}->{'local_base'};
 	# print '... ... loc_base='.$loc_base."\n";
@@ -114,7 +136,8 @@ sub process_file {
 
 		$logger->fatal('... unexpected,pos='.$pos);
 		$logger->fatal('... ... error condition-returning -2');
-		return -2;
+		$ret_ref->{'ret_code'} = -2;
+		return $ret_ref;
 	}
 	my $len_loc_base = length $loc_base;
 	my $relative_part_start = $pos + $len_loc_base;
@@ -135,8 +158,13 @@ sub process_file {
 	$logger->info('... url_for_check='.$url_for_check);
 	my $xml_remote_file = $self->xml_poll($url_for_check);
 	# print '... ... url_for_check='.$url_for_check."\n";
-	return $xml_remote_file;
-	print '... process_file::end'."\n";
+
+	$logger->info('Gitshapost::process_file-end');
+
+	$ret_ref->{'ret_code'} = 0;
+	$ret_ref->{'xml_remote_file'} = $xml_remote_file;
+
+	return $ret_ref; # successful return.
 }
 
 # The config for a gitshapost object is represented by
@@ -167,24 +195,24 @@ sub set_config {
 # within a monitored website.
 sub xml_poll {
 	my ($self, $polled_url) = @_;
-	print '... xmlpoll::start'."\n";
+	$logger->info('... xmlpoll::start');
 	my $mech = WWW::Mechanize->new(autocheck=>1);
 	$mech->get($polled_url);
 	my $content = $mech->content;
 	my $len_content = length $content;
-	print 'len_content='.$len_content."\n";
+	$logger->info('... ... len_content='.$len_content);
 	my $post_enc;
 	if (utf8::is_utf8($content))
 	{
-		print '... content is utf8 encoded'."\n";
+		$logger->info('... ... content is utf8 encoded');
 		$post_enc = Encode::encode_utf8($content);
 	}
 	else
 	{
-		print '... content is not utf8 encoded'."\n";
+		$logger->info('... ... content is not utf8 encoded');
 		$post_enc = $content;
 	}
-	print '... xmlpoll::end'."\n";
+	$logger->info('... xmlpoll::end');
 	return $post_enc;
 }
 
@@ -351,9 +379,9 @@ sub read {
 # considered a class method instead of an object method.
 sub relative_part {
 	my ($self, $full_path, $base_path) = @_;
-	print 'Gitshapost::relative_part-start'."\n";
-	print '... full_path='.$full_path."\n";
-	print '... base_path='.$base_path."\n";
+	$logger->info('... Gitshapost::relative_part-start');
+	$logger->info('... ... full_path='.$full_path);
+	$logger->info('... ... base_path='.$base_path);
 	my $pos = index $full_path, $base_path;
 	if ($pos == -1)
 	{
@@ -363,8 +391,8 @@ sub relative_part {
 	my $len_base_path = length $base_path;
 	my $relative_part_start = $pos + $len_base_path;
 	my $relative_part = substr $full_path, $relative_part_start;
-	print '... ... relative_part='.$relative_part."\n";
-	print 'Gitshapost::relative_part-end'."\n";
+	$logger->info('... ... relative_part='.$relative_part);
+	$logger->info('... Gitshapost::relative_part-end');
 	return $relative_part;
 }
 1;

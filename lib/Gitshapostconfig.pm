@@ -9,7 +9,63 @@
 # @change_history RByczko; 2016-10-16 October 16, 2016; Removed add_zone. (Artifact
 # of copy and past.  Zone is not a concept in git sha post config.)  Likewise for
 # in_zone.
+# @change_history RByczko;2016-12-25 December 25, 2016; Added 'documentation'.  Its
+# a good start but needs review.  (This comment is well after 'documentation' was
+# added, sometime in November or so.)  Also migrated print to logger.  Work
+# on excluded.  @todo need to review 'exclude' mechanism.
 
+# @documentation
+# Gitshapostconf is a configuration mechanism that allows for checking a deployment
+# on a remote web server
+# against what is in a local git repository.  The configuration is specified
+# in a text file and read into the Gitshapostconf object.
+#
+# Here is what is involved in the checking process.
+#
+# 1) A deployed web site
+#	a) a remote base; what is the root of the deployed website?
+#	b) one or more directories each of which is mapped to a directory in the
+#	git repository.
+#
+# 2) A local git repository
+#
+# The Gitshapostconfig represents a class to a set of objects.
+# Each object is related to a directory in a local git repository.
+# A text file form of that object is located in that directory and is
+# read into a Gitshapostconfig object using the read method.
+#
+# A Gitshapostconfig has a text file associated with it at a directory.
+# At the same directory are other files, which are mostly deployed
+# to the remote server.  A particular Gitshapostconfig is connected
+# to those other files.  It specifies where they are local and where
+# they are remotely.  This file set is called the 'managed file set'.
+#
+# What does Gitshapostconfig represent?
+#
+# It represents the github repo copy used locally, and where is
+# the 'root' of that copy located. The root is where the .git
+# directory is stored. @todo check this.
+#
+# remote_base: location on the server that contains the subdomain.
+# 	e.g. remindme.lunarrays.com has a place in the file system:
+#	/home/lunar51/public_html/remindme
+#	Thus remote_base in this example is /home/lunar51/public_html/remindme.
+#
+# remote_relative_part: relative to remote_base, remote_relative_part
+#	contains the directory path piece where the 'managed file
+#	set' (minus exceptions) is located on the remote server.
+#
+#	Each file in the 'managed file set' is deployed to:
+#	remote_base + remote_relative_part
+#
+#	This is true for each file in the 'managed file set' except for those
+#	marked as exceptions.   Exceptions are of two forms.  One is
+#	a file that is excluded; it does not belong on the remote
+#	server.  The other form is a file that will be put into a
+#	remote location other than: remote_base + remote_relative_part.
+#
+# excluded: this is a hash where each key represents a file that is
+#	excluded.
 
 package Gitshapostconfig;
 use overload '""' =>"gitshapostconfigstring";
@@ -23,6 +79,9 @@ require Exporter;
 our @ISA = qw(Exporter);
 our @EXPORT = qw();
 our @EXPORT_OK = qw();
+
+use Log::Log4perl qw(get_logger);
+my $logger = get_logger("Gitshapostconfig");
 
 # nameOfObject: this is just a notation attribute to help tag our
 # objects.  It can be any string the client code wants to use
@@ -39,6 +98,10 @@ sub new {
 		'utility_location'=>'',
 		'utility_get'=>'',
 		'utility_page'=>'',
+		'remote_base'=>'',
+		'remote_relative_part'=>'',
+		'excluded'=>{
+		},
 		# config_names represents a list of valid config names.
 		# Its a little redundant since these are the same as above,
 		# yet I like to list them expliciting.  There are some
@@ -50,13 +113,17 @@ sub new {
 			'config.checked_website'=>1,
 			'config.utility_location'=>1,
 			'config.utility_get'=>1,
-			'config.utility_page'=>1
+			'config.utility_page'=>1,
+			'config.remote_base'=>1,
+			'config.remote_relative_part'=>1,
+			'config.excluded'=>'',
 		},
 		# A config file can contain comment lines.  Any line that
 		# starts with a comment symbol is a comment is not parsed.
 		'comment_symbol'=>'#'
 	};
 	my $self = bless $new_obj, $class;
+	$logger->info('Gitshapostconfig::new-start');
 	return $self;
 }
 
@@ -74,9 +141,10 @@ sub tmp_area {
 
 sub set_tmp_area {
 	my ($self, $new_tmp_area) = @_;
-	print '... set_tmp_area::start'."\n";
+	$logger->info('... Gitshapostconfig::set_tmp_area-start');
 	$self->{'tmp_area'} = $new_tmp_area;
-	print '... set_tmp_area::end'."\n";
+	$logger->info('... ... new_tmp_area='.$new_tmp_area);
+	$logger->info('... Gitshapostconfig::set_tmp_area-end');
 }
 
 # A config file can contain comment lines which is a nice thing.
@@ -115,13 +183,20 @@ sub gitshapostconfigstring {
 	my $utility_page = $self->{'utility_page'};
 	$ret_string .= 'utility_page='.$utility_page."\n";
 
-	my %h_config_names = $self->{'config_names'};
+	my $ref_config_names = $self->{'config_names'};
+	my %h_config_names = %$ref_config_names;
 	$ret_string .= 'config_names{"config.local_base"}='.$h_config_names{'config.local_base'}."\n";
 	$ret_string .= 'config_names{"config.checked_website"}='.$h_config_names{'config.checked_website'}."\n";
 	$ret_string .= 'config_names{"config.utility_location"}='.$h_config_names{'config.utility_location'}."\n";
 	$ret_string .= 'config_names{"config.utility_get"}='.$h_config_names{'config.utility_get'}."\n";
 	$ret_string .= 'config_names{"config.utility_page"}='.$h_config_names{'config.utility_page'}."\n";
 
+	my $ref_excluded = $self->{'excluded'};
+
+	my @h_excluded_files = keys %$ref_excluded;
+	foreach my $excluded (@h_excluded_files) {
+		$ret_string .= 'excluded='.$excluded."\n";
+	}
 	my $comment_symbol = $self->{'comment_symbol'};
 	$ret_string .= 'comment_symbol='.$comment_symbol."\n";
 
@@ -133,14 +208,15 @@ sub gitshapostconfigstring {
 # object.
 sub read {
 	my ($self, $srcFile) = @_;
+	$logger->info('... Gitshapostconfig::read-start');
 	open(FHS,"<".$srcFile);
 	
 	while (<FHS>)
 	{
-		print $_;
+		# $logger->info('... ... line read='.$_);
 		chomp;
 		my $input_line = $_;
-		print 'input_line='.$input_line."\n";
+		$logger->info('... ... input_line='.$input_line);
 		# Test for a possibly empty line before looking for a comment
 		# symbol.
 		if (length($input_line)<1)
@@ -160,21 +236,33 @@ sub read {
 		{
 			# Its a recognized config value.
 			# my ($parent_name, $child_name) = split /./, $config_name;
-			print 'recognized, config_name:'.$config_name."\n";
+			$logger->info('... ... ... recognized, config_name:'.$config_name);
 			my ($parent_name, $child_name) = split /\./, $config_name;
-			print '... parent_name='.$parent_name."\n";
-			print '... child_name='.$child_name."\n";
-			print '... config_value:'.$config_value."\n";
-			$self->{$child_name} = $config_value;
+			$logger->info('... ... ... parent_name='.$parent_name);
+			$logger->info('... ... ... child_name='.$child_name);
+			$logger->info('... ... ... config_value:'.$config_value);
 
-			print '... config_value:'.$self->{$child_name}."\n";
+			if ($child_name ne 'excluded')
+			{
+				$self->{$child_name} = $config_value;
+				$logger->info('... ... ... config_value:'.$self->{$child_name});
+			}
+			else
+			{
+				# excluded file
+				$self->{$child_name}->{$config_value} = '1';
+				$logger->info('... ... ... config_value:'.$self->{$child_name}->{$config_value});
+			}
+
+			# print '... config_value:'.$self->{$child_name}."\n";
 		}
 		else
 		{
 			# Its not a recognized config value.
-			print 'not recognized, config_name:'.$config_name."\n";
+			$logger->info('... ... ... not recognized, config_name:'.$config_name);
 		}
 	}
 	close(FHS);
+	$logger->info('... Gitshapostconfig::read-end');
 }
 1;

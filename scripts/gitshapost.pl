@@ -23,10 +23,14 @@
 # Adjusted processing of return value for Gitshapost::process_file.
 # This is to reflect the change in its return type from a scalar to
 # a reference to a hash.
+# @change_history 2016-11-26, November 26, 2016.  Added normalize_config_file.
+# @change_history 2016-12-25, December 25, 2016.  Migrated print to logger calls.
 
 use strict;
 use Modern::Perl;
 use Getopt::Long;
+use Cwd;
+use File::Basename;
 
 
 use Env qw(GITSEARCH_HOME GITSEARCH_LIB GITREPO_HOME GITBIN_LOCATION);
@@ -91,6 +95,49 @@ GetOptions(
 print 'file_input='.$file_input."\n";
 print 'all='.$all."\n";
 print 'config_file='.$config_file."\n";
+
+
+# normalize_config_file.  Insure that config_file is correct, in that
+# the one utilized should be in same directory as where the file for -f
+# is located.
+#
+# Config files should be in the directory of the files to which it
+# applies.  gitshapost.pl however, can be called, lets say, from
+# a parent directory of a subdirectory, the later of which contains
+# the file we are interested in (utilized for example in
+# single file mode).  And so when gitshapost.pl is invoked, it is utilizing
+# the config file in that parent directory.  This is conceptually
+# incorrect, unless we have directory inheritance.  What we want is
+# the config file located in the subdirectory.  We want the config
+# file immediately local to the relevant file. 
+sub normalize_config_file {
+	my ($config_file, $current_dir, $file_input) = @_;
+	$logger->info('normalize_config_file-start');
+	$logger->info('... config_file='.$config_file);
+	$logger->info('... current_dir='.$current_dir);
+	$logger->info('... file_input='.$file_input);
+	my $abs_fipath = Cwd::realpath($file_input);
+	$logger->info('... abs_fipath='.$abs_fipath);
+	my ($fi_name, $fi_path, $fi_suffix) = fileparse($abs_fipath);
+	$logger->info('... fi_name='.$fi_name);
+	$logger->info('... fi_path='.$fi_path);
+	$logger->info('... fi_suffix='.$fi_suffix);
+	my $ncf = '';
+	if ($fi_path eq $current_dir)
+	{
+		$logger->info('... path of file_input and current directory are equal');
+		$ncf = $fi_path.$config_file;
+	}
+	else
+	{
+		$logger->info('... path of file_input and current directory are not equal');
+		$ncf = $fi_path.$config_file;
+	}
+	$logger->info('... ncf='.$ncf);
+	$logger->info('normalize_config_file-end');
+	return $ncf;
+}
+
 if (($file_input eq "") && ($all == 0))
 {
 	$logger->info('... gitshapost.pl-need single file or all-exiting');
@@ -120,7 +167,14 @@ if ($file_input ne "")
 	# Take care of the config file and config object.
 	my $nameConfig = 'name:gitshapost::Gitshapostconfig';
 	my $objConfig = new Gitshapostconfig($nameConfig);
-	my $ret_read = $objConfig->read($config_file);
+
+	my $current_dir = cwd();
+	$current_dir .= '/';
+	my $ncf = normalize_config_file($config_file, $current_dir, $file_input);
+	# my $ret_read = $objConfig->read($config_file);
+	my $ret_read = $objConfig->read($ncf);
+	### print 'exit for testing'."\n";
+	### exit(0);
 
 	# Associate config object with Gitshapost object.
 	$objGS->set_config($objConfig);
@@ -141,7 +195,7 @@ if ($file_input ne "")
 	
 	# See ~/git/git-php-rewrite/document_root/php-bin/gitshaxml.php
 	# gitshaxml.php is used for config.utility_page.
-	print 'hashGit...error_code='.$hashGitDetailsRemote->{'errorcode'}."\n";
+	$logger->info('... ... hashGit...error_code='.$hashGitDetailsRemote->{'errorcode'});
 
 	if ($hashGitDetailsRemote->{'errorcode'} ne 0)
 	{
@@ -156,14 +210,14 @@ if ($file_input ne "")
 	# @todo RByczko 2016-11-16 This is not the relative part.  It includes full directory on server.
 	my $infoabout = $hashGitDetailsRemote->{'infoabout'};
 	my $remote_base = $objConfig->{'remote_base'};
-	print 'remote_base='.$remote_base."\n";
+	$logger->info('... ... remote_base='.$remote_base);
 
-	my $rel_filename = 'there';
+	my $rel_filename = 'there'; #@todo fix this
 	$rel_filename = $objGS->relative_part($infoabout, $remote_base);
 	my $trim_rel_filename = $rel_filename;
 	$trim_rel_filename =~ s{^/+}{};
-	print 'rel_filename='.$rel_filename."\n";
-	print 'trim_rel_filename='.$trim_rel_filename."\n";
+	$logger->info('... ... rel_filename='.$rel_filename);
+	$logger->info('... ... trim_rel_filename='.$trim_rel_filename);
 	my $ret_gf = git_find($GITREPO_HOME, $trim_rel_filename, $gitshavalue);
 	if ($ret_gf->{found})
 	{
