@@ -13,6 +13,7 @@
 # a good start but needs review.  (This comment is well after 'documentation' was
 # added, sometime in November or so.)  Also migrated print to logger.  Work
 # on excluded.  @todo need to review 'exclude' mechanism.
+# @change_history RByczko;2017-01-05 January 05, 2017; Added is_excluded method.
 
 # @documentation
 # Gitshapostconf is a configuration mechanism that allows for checking a deployment
@@ -264,5 +265,22 @@ sub read {
 	}
 	close(FHS);
 	$logger->info('... Gitshapostconfig::read-end');
+}
+
+# is_excluded: returns true or false depending on whether or not a file is excluded.
+# The client code could test against the excluded hash directory, but naming
+# this functionality makes intention clearer.
+sub is_excluded {
+	my ($self, $fileName) = @_;
+	my $retValue;
+	if (exists($self->{'excluded'}->{$fileName}))
+	{
+		$retValue = 1; # true
+	}
+	else
+	{
+		$retValue = 0; # false
+	}
+	return $retValue;
 }
 1;
