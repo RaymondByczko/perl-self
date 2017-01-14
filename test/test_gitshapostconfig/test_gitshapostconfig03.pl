@@ -5,10 +5,23 @@
 # Specifically it will test the exclude mechanism providing an example
 # of how client code may use it.  This method will look at the excluded hash
 # directly in the Gitshapostconfig object.
+# @associated_files sampleconfig03.cfg
 # @start_date 2017-01-05 January 05, 2017
 # @usage Invoke from the current directory:
 #	perl -I../../lib ./test_gitshapostconfig03.pl
 #
+# @status When running this script, under the output of 'exclusion
+# considerations, the following is observed and is expected.
+#	a) not_this_file01.html is excluded
+#	b) not_this_file02.html is excluded
+#	c) includedfile.hmtl is not excluded
+# This outcome is per consideration of sampleconfig03.cfg
+# via the two lines it contains as follows:
+#
+# 	config.excluded=not_this_file01.html
+#	config.excluded=not_this_file02.html
+#
+# Thus this test is a success.
 
 use strict;
 require Gitshapostconfig;
