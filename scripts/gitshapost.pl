@@ -25,6 +25,8 @@
 # a reference to a hash.
 # @change_history 2016-11-26, November 26, 2016.  Added normalize_config_file.
 # @change_history 2016-12-25, December 25, 2016.  Migrated print to logger calls.
+# @change_history 2017-01-14, January 14, 2017.  Added excluded file functionality
+# to single file mode.
 
 use strict;
 use Modern::Perl;
@@ -175,6 +177,16 @@ if ($file_input ne "")
 	my $ret_read = $objConfig->read($ncf);
 	### print 'exit for testing'."\n";
 	### exit(0);
+
+	my $excludeFile = $objConfig->is_excluded($file_input);
+	if ($excludeFile == 1)
+	{
+		# The file is excluded by configuration.
+		$logger->info('gitshapost.pl-excluded file-normal exit (file:'.$file_input.')');
+		print 'File excluded:'.$file_input."\n";
+		exit(0); # success, albeit excluded file
+	}
+
 
 	# Associate config object with Gitshapost object.
 	$objGS->set_config($objConfig);
