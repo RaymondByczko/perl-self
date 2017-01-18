@@ -27,6 +27,8 @@
 # @change_history 2016-12-25, December 25, 2016.  Migrated print to logger calls.
 # @change_history 2017-01-14, January 14, 2017.  Added excluded file functionality
 # to single file mode.
+# @change_history 2017-01-15, January 15, 2017.  Added no_path_resolution functionality
+# for exclusion of files.  See Diary #7, p. 167 to 172. 
 
 use strict;
 use Modern::Perl;
@@ -53,6 +55,7 @@ use lib (split ' ',$GITSEARCH_LIB);
 require Gitshapost;
 # use Gitshapost;
 require Gitshapostconfig;
+require Gitshautility;
 use Log::Log4perl qw(get_logger);
 
 
@@ -140,6 +143,7 @@ sub normalize_config_file {
 	return $ncf;
 }
 
+
 if (($file_input eq "") && ($all == 0))
 {
 	$logger->info('... gitshapost.pl-need single file or all-exiting');
@@ -178,12 +182,22 @@ if ($file_input ne "")
 	### print 'exit for testing'."\n";
 	### exit(0);
 
-	my $excludeFile = $objConfig->is_excluded($file_input);
+
+	# Form the 'no path resolution' (npr) from $file_input.
+	# e.g. ./Account.php resolves to 'Account.php'
+	# e.g. ./controllers/Account.php resolves to 'Account.php'
+	# (Basically just get the file name component).
+	my $nameObj = 'Gitshautility::gitshapost.pl';
+	my $objUtility = new Gitshautility($nameObj);
+	my $npr = $objUtility->no_path_resolution($file_input);
+
+	my $excludeFile = $objConfig->is_excluded($npr);
 	if ($excludeFile == 1)
 	{
 		# The file is excluded by configuration.
 		$logger->info('gitshapost.pl-excluded file-normal exit (file:'.$file_input.')');
 		print 'File excluded:'.$file_input."\n";
+		print 'No path resolution:'.$npr."\n";
 		exit(0); # success, albeit excluded file
 	}
 

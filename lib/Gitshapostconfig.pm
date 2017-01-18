@@ -14,6 +14,9 @@
 # added, sometime in November or so.)  Also migrated print to logger.  Work
 # on excluded.  @todo need to review 'exclude' mechanism.
 # @change_history RByczko;2017-01-05 January 05, 2017; Added is_excluded method.
+# @change_history RByczko;2017-01-17 January 17, 2017; Added excluded_npr to hash
+# representing a Gitshapostconfig object.  This will provide better support for
+# is_excluded.  It will rely on excluded_npr.
 
 # @documentation
 # Gitshapostconf is a configuration mechanism that allows for checking a deployment
@@ -74,6 +77,7 @@ use File::Copy;
 use File::Basename;
 # use Shell qw(diff date);
 # use Text::Diff;
+require Gitshautility;
 
 use strict;
 require Exporter;
@@ -102,6 +106,9 @@ sub new {
 		'remote_base'=>'',
 		'remote_relative_part'=>'',
 		'excluded'=>{
+		},
+		# excluded_npr: represents 'no path representation' of excluded files.
+		'excluded_npr'=>{
 		},
 		# config_names represents a list of valid config names.
 		# Its a little redundant since these are the same as above,
@@ -251,8 +258,16 @@ sub read {
 			else
 			{
 				# excluded file
+				# NOTE: $child_name is 'excluded' here.
 				$self->{$child_name}->{$config_value} = '1';
 				$logger->info('... ... ... config_value:'.$self->{$child_name}->{$config_value});
+				
+				# Store the 'no path resolution' format under 'excluded_npr'.
+				my $nameObj = 'Gitshapostconfig::Gitshautility';
+				my $objUtility = new Gitshautility($nameObj);
+				my $npr = $objUtility->no_path_resolution($config_value);
+				$logger->info('... ... ... npr:'.$npr);
+				$self->{'excluded_npr'}->{$npr} = '1';
 			}
 
 			# print '... config_value:'.$self->{$child_name}."\n";
@@ -268,12 +283,13 @@ sub read {
 }
 
 # is_excluded: returns true or false depending on whether or not a file is excluded.
-# The client code could test against the excluded hash directory, but naming
+# The client code could test against the excluded_npr hash, but naming
 # this functionality makes intention clearer.
+# 
 sub is_excluded {
 	my ($self, $fileName) = @_;
 	my $retValue;
-	if (exists($self->{'excluded'}->{$fileName}))
+	if (exists($self->{'excluded_npr'}->{$fileName}))
 	{
 		$retValue = 1; # true
 	}
