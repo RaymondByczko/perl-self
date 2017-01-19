@@ -29,6 +29,8 @@
 # to single file mode.
 # @change_history 2017-01-15, January 15, 2017.  Added no_path_resolution functionality
 # for exclusion of files.  See Diary #7, p. 167 to 172. 
+# @change_history 2017-01-18, January 18, 2017.  Implement 'all' mode.
+# @todo Need to finish 'all' mode. @todo_end
 
 use strict;
 use Modern::Perl;
@@ -163,6 +165,36 @@ if ($all == 1)
 {
 	$logger->info('... gitshapost.pl-start of all mode');
 	# We are in all mode.
+
+	print "all mode (start)..."."\n";
+
+	# Step 1 - Establish gitshapost object
+	my $nameGitsha = 'name:gitshapost::Gitshapost';
+	my $objGS = new Gitshapost($nameGitsha);
+	# Step 2 - Take care of the config file and config object.
+	my $nameConfig = 'name:gitshapost::Gitshapostconfig';
+	my $objConfig = new Gitshapostconfig($nameConfig);
+	# Step 3 - Normalize config file.
+	my $current_dir = cwd();
+	$current_dir .= '/';
+	my $ncf = normalize_config_file($config_file, $current_dir, $file_input);
+	# Step 4 - Establish possible candidates in current directory.
+	my $explore_dir = cwd();
+
+	my $nameObj = 'gitshapost.pl:gitshautility';
+	my $objUtility = new Gitshautility($nameObj);
+	my $allFiles = $objUtility->fullFileListing();
+	my $refCandidates = $objUtility->candidates($current_dir, $explore_dir, $allFiles);
+	# Step 5 - Remove excluded files from possible candidatate.
+
+	my @candidates = @$refCandidates;
+	print '... candidates(start) for:'.$current_dir."\n";
+	foreach my $aCandidate (@candidates)
+	{
+		print '... ... aCandidate='.$aCandidate."\n";
+	}
+	print '... candidates(end)'."\n";
+	print "all mode (end)..."."\n";
 }
 if ($file_input ne "")
 {
