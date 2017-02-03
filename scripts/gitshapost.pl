@@ -31,6 +31,7 @@
 # for exclusion of files.  See Diary #7, p. 167 to 172. 
 # @change_history 2017-01-18, January 18, 2017.  Implement 'all' mode.
 # @todo Need to finish 'all' mode. @todo_end
+# @change_history 2017-02-03, February 3, 2017.  Added to 'all' mode.  In progress.
 
 use strict;
 use Modern::Perl;
@@ -177,7 +178,17 @@ if ($all == 1)
 	# Step 3 - Normalize config file.
 	my $current_dir = cwd();
 	$current_dir .= '/';
-	my $ncf = normalize_config_file($config_file, $current_dir, $file_input);
+	# my $ncf = normalize_config_file($config_file, $current_dir, $file_input);
+	# my $ncf = normalize_config_file($config_file, $current_dir, $current_dir);
+	# @todo temp fix - resolve
+	my $ncf = $current_dir.$config_file;
+	my $ret_read = $objConfig->read($ncf);
+	$logger->info('... ... ret_read (from $objConfig->read):'.$ret_read);
+
+	# @todo temp debugging
+	print $objConfig;
+
+	### print 'exit for testing'."\n";
 	# Step 4 - Establish possible candidates in current directory.
 	my $explore_dir = cwd();
 
@@ -194,6 +205,37 @@ if ($all == 1)
 		print '... ... aCandidate='.$aCandidate."\n";
 	}
 	print '... candidates(end)'."\n";
+
+
+	# Associate config object with Gitshapost object.
+	$objGS->set_config($objConfig);
+	
+	my $refToBeRemoved = $objUtility->standardRemovals();
+	my $refFilteredCandidates = $objUtility->removeElements($refToBeRemoved, $refCandidates);
+
+	my $refExcNpr = $objConfig->get_excluded_npr();
+	my $refNprFilteredCandidates = $objUtility->removeElements($refExcNpr, $refFilteredCandidates);
+
+	# A ref to an array of the candidates that should be processed is in: $refNprFilteredCandidates
+	foreach my $aFile_input (@$refNprFilteredCandidates)
+	{
+		# Process the file (retrieving details from across the web)
+		# (Looking at a deployed file.)
+		print 'Process:'.$aFile_input."\n";
+		my $ret_pf = $objGS->process_file($aFile_input);
+		if ($ret_pf->{'ret_code'} < 0)
+		{
+			# error condition detected by process_file.
+			$logger->info('... gitshapost.pl-error with process_file');
+			$logger->info('... ... aFile_input='.$aFile_input);
+			$logger->info('... ... ret_pf->{"ret_code"}='.$ret_pf->{'ret_code'});
+			print 'Problem with:'.$aFile_input."\n";
+			next;
+			# exit(1); # failure
+		}
+		print 'Processed ok:'.$aFile_input."\n";
+	}
+
 	print "all mode (end)..."."\n";
 }
 if ($file_input ne "")

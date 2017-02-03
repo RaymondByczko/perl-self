@@ -17,6 +17,7 @@
 # @change_history RByczko;2017-01-17 January 17, 2017; Added excluded_npr to hash
 # representing a Gitshapostconfig object.  This will provide better support for
 # is_excluded.  It will rely on excluded_npr.
+# @change_history RByczko;2017-01-19 January 19, 2017; Added get_excluded_npr.
 
 # @documentation
 # Gitshapostconf is a configuration mechanism that allows for checking a deployment
@@ -217,6 +218,7 @@ sub gitshapostconfigstring {
 sub read {
 	my ($self, $srcFile) = @_;
 	$logger->info('... Gitshapostconfig::read-start');
+	$logger->info('... ... srcFile='.$srcFile);
 	open(FHS,"<".$srcFile);
 	
 	while (<FHS>)
@@ -299,4 +301,13 @@ sub is_excluded {
 	}
 	return $retValue;
 }
+
+# get_excluded_npr returns a reference to an array, of which 
+# the excluded no path resolution entities are returned.
+sub get_excluded_npr {
+	my ($self) = @_;
+	my @theExcludedNpr = keys $self->{'excluded_npr'};
+	return \@theExcludedNpr;
+}
+
 1;

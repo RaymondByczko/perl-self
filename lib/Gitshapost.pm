@@ -24,6 +24,7 @@
 # replace print.
 # @change_history RByczko;2016-12-25 December 25, 2016; Added logger calls to
 # relative_part.
+# @change_history RByczko,2017-01-25 January 25, 2017; Changed print to logger calls.
 
 package Gitshapost;
 use overload '""' =>"gitshapoststring";
@@ -179,16 +180,21 @@ sub get_config {
 
 sub set_config {
 	my ($self, $new_config) = @_;
-	print '... set_config::start'."\n";
+	# print '... set_config::start'."\n";
+	$logger->info('... set_config::start');
 	if (ref($new_config) eq 'Gitshapostconfig')
 	{
 		$self->{'config'} = $new_config;
+		$logger->info('... ... config set properly');
 	}
 	else
 	{
-		print '... ... new_config is not a blessed Gitshapostconfig object'."\n";
+		# print '... ... new_config is not a blessed Gitshapostconfig object'."\n";
+		$logger->info('... ... new_config is not a blessed Gitshapostconfig object');
 	}
-	print '... set_config::end'."\n";
+	# print '... set_config::end'."\n";
+
+	$logger->info('... set_config::end');
 }
 
 # This method does a network call, to retrieve git sha information, on a requested page

@@ -7,6 +7,8 @@
 # @change_history 2017-01-18, January 18, 2017; Added candidates method,
 # fullFileListing method.
 # @todo Document fullFileListing @todo_end
+# @change_history 2017-01-19, January 19, 2017; Added method removeElements.
+# And method: standardRemovals.
 
 package Gitshautility;
 use overload '""' =>"gitshautilitystring";
@@ -136,5 +138,42 @@ sub candidates {
 sub fullFileListing {
 	my $retFullFileL = ".* *";
 	return $retFullFileL;
+}
+
+# This method removes elements from a referenced array returned by method
+# candidates.  The elements removed are specified in a referenced array
+# refToBeRemoved.  The elements are removed from refCandidates.  The result
+# of this removal is returned by this method.  A reference to an array is
+# returned.
+#
+# The array referred to by refToBeRemoved typically contains two elements.
+# These include a) . b) ..
+#
+sub removeElements {
+	my ($self, $refToBeRemoved, $refCandidates) = @_;
+	my @toBeRemoved = @$refToBeRemoved;
+	my @theCandidates = @$refCandidates;
+
+	my @resultArray;
+
+	foreach my $aCandidate (@theCandidates) {
+		## smartmatch is experimental
+		## if ($aCandidate ~~ @toBeRemoved)
+		if (grep( /^$aCandidate$/, @toBeRemoved))
+		{
+			# ignore since its on removal list.
+		}
+		else
+		{
+			push @resultArray, $aCandidate
+		}
+	}
+	my $refResultArray = \@resultArray;
+	return $refResultArray;
+}
+
+sub standardRemovals {
+	my @toBeRemoved = (".", "..");
+	return \@toBeRemoved;
 }
 1;
