@@ -32,6 +32,8 @@
 # @change_history 2017-01-18, January 18, 2017.  Implement 'all' mode.
 # @todo Need to finish 'all' mode. @todo_end
 # @change_history 2017-02-03, February 3, 2017.  Added to 'all' mode.  In progress.
+# @change_history 2017-02-07, February 7, 2017.  Refactor single file mode with sub:
+# remote_repo_compare.  Eventually this will be applied to all file mode.
 
 use strict;
 use Modern::Perl;
@@ -240,8 +242,17 @@ if ($all == 1)
 }
 if ($file_input ne "")
 {
-	$logger->info('... gitshapost.pl-start of single file mode');
-	# we are in single file mode.
+	my @array_file_input = [$file_input];
+	remote_repo_compare(\@array_file_input);
+}
+sub remote_repo_compare {
+	my ($ref_array_file_input) = @_;
+	my @array_file_input = @$ref_array_file_input;
+	my $len_file_input = @array_file_input;
+	if ($len_file_input == 1) {
+		$logger->info('... gitshapost.pl-start of single file mode');
+		# we are in single file mode.
+	}
 	my $nameGitsha = 'name:gitshapost::Gitshapost';
 	my $objGS = new Gitshapost($nameGitsha);
 	# Take care of the config file and config object.
