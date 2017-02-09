@@ -34,6 +34,8 @@
 # @change_history 2017-02-03, February 3, 2017.  Added to 'all' mode.  In progress.
 # @change_history 2017-02-07, February 7, 2017.  Refactor single file mode with sub:
 # remote_repo_compare.  Eventually this will be applied to all file mode.
+# @change_history 2017-02-07, February 7, 2017.  Partial refactor of all file mode
+# with sub: candidates_for_processing.
 
 use strict;
 use Modern::Perl;
@@ -194,6 +196,8 @@ if ($all == 1)
 	# Step 4 - Establish possible candidates in current directory.
 	my $explore_dir = cwd();
 
+sub candidates_for_processing {
+	my ($current_dir, $explore_dir, $objGS, $objConfig) = @_;
 	my $nameObj = 'gitshapost.pl:gitshautility';
 	my $objUtility = new Gitshautility($nameObj);
 	my $allFiles = $objUtility->fullFileListing();
@@ -217,6 +221,9 @@ if ($all == 1)
 
 	my $refExcNpr = $objConfig->get_excluded_npr();
 	my $refNprFilteredCandidates = $objUtility->removeElements($refExcNpr, $refFilteredCandidates);
+	return $refNprFilteredCandidates;
+}
+	my $refNprFilteredCandidates = candidates_for_processing($current_dir, $explore_dir, $objGS, $objConfig);
 
 	# A ref to an array of the candidates that should be processed is in: $refNprFilteredCandidates
 	foreach my $aFile_input (@$refNprFilteredCandidates)
