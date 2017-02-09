@@ -41,6 +41,8 @@
 # @change_history 2017-02-09, February 9, 2017. Add sub candidates_for_processing_1
 # This sub produces a reference to an array of candidates to be processed
 # for single file mode (-f).
+# @change_history 2017-02-09, February 9, 2017. Added remote_repo_compare_single.
+# It is wrapped now by a remote_repo_compare.
 
 use strict;
 use Modern::Perl;
@@ -326,11 +328,18 @@ sub candidates_for_processing_1 {
 sub remote_repo_compare {
 	my ($ref_array_file_input, $objConfig) = @_;
 	my @array_file_input = @$ref_array_file_input;
-	my $len_file_input = @array_file_input;
-	if ($len_file_input == 1) {
-		$logger->info('... gitshapost.pl-start of single file mode');
-		# we are in single file mode.
+	foreach my $file_input (@array_file_input)
+	{
+		remote_repo_compare_single($file_input, $objConfig);
 	}
+}
+sub remote_repo_compare_single {
+	my ($file_input, $objConfig) = @_;
+	### my $len_file_input = @array_file_input;
+	### if ($len_file_input == 1) {
+	###	$logger->info('... gitshapost.pl-start of single file mode');
+	###	# we are in single file mode.
+	### }
 	my $nameGitsha = 'name:gitshapost::Gitshapost';
 	my $objGS = new Gitshapost($nameGitsha);
 
