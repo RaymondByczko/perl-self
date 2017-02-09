@@ -38,6 +38,9 @@
 # with sub: candidates_for_processing.
 # @change_history 2017-02-09, February 9, 2017.  Change signature of sub:
 # candidates_for_processing.  Document candidates_for_processing.
+# @change_history 2017-02-09, February 9, 2017. Add sub candidates_for_processing_1
+# This sub produces a reference to an array of candidates to be processed
+# for single file mode (-f).
 
 use strict;
 use Modern::Perl;
@@ -275,11 +278,53 @@ sub candidates_for_processing {
 }
 if ($file_input ne "")
 {
+
+	# Take care of the config file and config object.
+	my $nameConfig = 'name:gitshapost::Gitshapostconfig';
+	my $objConfig = new Gitshapostconfig($nameConfig);
+	my $current_dir = cwd();
+	$current_dir .= '/';
+	my $ncf = normalize_config_file($config_file, $current_dir, $file_input);
+	my $ret_read = $objConfig->read($ncf);
+	# The config file and config object are taken care of at this point.
+
 	my @array_file_input = [$file_input];
-	remote_repo_compare(\@array_file_input);
+
+# Determines if file_input is a valid candidate for single file mode,
+# which is specified by a Gitshapostconfig object, delivered
+# as objConfig.  Note that the read method is usually called
+# on the Gitshapostconfig object so as to read in anything
+# that might be excluded, among other details.
+sub candidates_for_processing_1 {
+	my ($file_input, $objConfig) = @_;
+	# Form the 'no path resolution' (npr) from $file_input.
+	# e.g. ./Account.php resolves to 'Account.php'
+	# e.g. ./controllers/Account.php resolves to 'Account.php'
+	# (Basically just get the file name component).
+	my $nameObj = 'Gitshautility::gitshapost.pl';
+	my $objUtility = new Gitshautility($nameObj);
+	my $npr = $objUtility->no_path_resolution($file_input);
+	my $excludeFile = $objConfig->is_excluded($npr);
+	if ($excludeFile == 1)
+	{
+		# The file is excluded by configuration.
+		$logger->info('gitshapost.pl-candidates_for_processing_1-excluded file-normal exit (file:'.$file_input.')');
+		print 'File excluded:'.$file_input."\n";
+		print 'No path resolution:'.$npr."\n";
+		my $ref_empty_array = [];
+		return $ref_empty_array;
+		# success, albeit excluded file
+	}
+	# The file is not excluded. Return a reference
+	# to an anonymous array.
+	return [$file_input];
+}
+	my $ref_candidates = candidates_for_processing_1($file_input, $objConfig);
+	# remote_repo_compare(\@array_file_input, $objConfig);
+	remote_repo_compare($ref_candidates, $objConfig);
 }
 sub remote_repo_compare {
-	my ($ref_array_file_input) = @_;
+	my ($ref_array_file_input, $objConfig) = @_;
 	my @array_file_input = @$ref_array_file_input;
 	my $len_file_input = @array_file_input;
 	if ($len_file_input == 1) {
@@ -288,37 +333,6 @@ sub remote_repo_compare {
 	}
 	my $nameGitsha = 'name:gitshapost::Gitshapost';
 	my $objGS = new Gitshapost($nameGitsha);
-	# Take care of the config file and config object.
-	my $nameConfig = 'name:gitshapost::Gitshapostconfig';
-	my $objConfig = new Gitshapostconfig($nameConfig);
-
-	my $current_dir = cwd();
-	$current_dir .= '/';
-	my $ncf = normalize_config_file($config_file, $current_dir, $file_input);
-	# my $ret_read = $objConfig->read($config_file);
-	my $ret_read = $objConfig->read($ncf);
-	### print 'exit for testing'."\n";
-	### exit(0);
-
-
-	# Form the 'no path resolution' (npr) from $file_input.
-	# e.g. ./Account.php resolves to 'Account.php'
-	# e.g. ./controllers/Account.php resolves to 'Account.php'
-	# (Basically just get the file name component).
-	my $nameObj = 'Gitshautility::gitshapost.pl';
-	my $objUtility = new Gitshautility($nameObj);
-	my $npr = $objUtility->no_path_resolution($file_input);
-
-	my $excludeFile = $objConfig->is_excluded($npr);
-	if ($excludeFile == 1)
-	{
-		# The file is excluded by configuration.
-		$logger->info('gitshapost.pl-excluded file-normal exit (file:'.$file_input.')');
-		print 'File excluded:'.$file_input."\n";
-		print 'No path resolution:'.$npr."\n";
-		exit(0); # success, albeit excluded file
-	}
-
 
 	# Associate config object with Gitshapost object.
 	$objGS->set_config($objConfig);
