@@ -36,6 +36,8 @@
 # remote_repo_compare.  Eventually this will be applied to all file mode.
 # @change_history 2017-02-07, February 7, 2017.  Partial refactor of all file mode
 # with sub: candidates_for_processing.
+# @change_history 2017-02-09, February 9, 2017.  Change signature of sub:
+# candidates_for_processing.  Document candidates_for_processing.
 
 use strict;
 use Modern::Perl;
@@ -196,14 +198,37 @@ if ($all == 1)
 	# Step 4 - Establish possible candidates in current directory.
 	my $explore_dir = cwd();
 
+	# Associate config object with Gitshapost object.
+	$objGS->set_config($objConfig);
+
+# Given a directory to explore (explore_dir), this sub gets
+# all file names at that directory minus a) standard removals
+# like '.' and '..' b) excluded files that were excluded from
+# via a config file.
+#
+# candidates_for_processing is an 'all mode' context sub.
+# It is not intended to be used for 'single file' mode.
+#
+# parameters
+#	current_dir: this is a requirement for the implementation
+#		but is not the main part of the logic.
+#		Gitshautility::candidates needs it to do a glob
+#		function correctly.  Otherwise, its not needed.
+#	explore_dir: this is where candidates_for_processing will
+#		explore to seek out candidates.
+#	objConfig: required since candidates_for_processing needs to consider
+#		excluded files (in 'no path resolution' format).
 sub candidates_for_processing {
-	my ($current_dir, $explore_dir, $objGS, $objConfig) = @_;
+	my ($current_dir, $explore_dir, $objConfig) = @_;
+	# Instantiate our utility class.
 	my $nameObj = 'gitshapost.pl:gitshautility';
 	my $objUtility = new Gitshautility($nameObj);
+	# Specify all files.
 	my $allFiles = $objUtility->fullFileListing();
+	# Get candidates at $explore_dir.
 	my $refCandidates = $objUtility->candidates($current_dir, $explore_dir, $allFiles);
-	# Step 5 - Remove excluded files from possible candidatate.
 
+	# Print out candidates for debugging/information purposes.
 	my @candidates = @$refCandidates;
 	print '... candidates(start) for:'.$current_dir."\n";
 	foreach my $aCandidate (@candidates)
@@ -212,18 +237,19 @@ sub candidates_for_processing {
 	}
 	print '... candidates(end)'."\n";
 
-
-	# Associate config object with Gitshapost object.
-	$objGS->set_config($objConfig);
-	
+	# Calculate the standard removals from consideration.  Things like '.' and '..'.
 	my $refToBeRemoved = $objUtility->standardRemovals();
+	# Remove the standard removals from the candidate list.
 	my $refFilteredCandidates = $objUtility->removeElements($refToBeRemoved, $refCandidates);
 
+	# Get an array reference for those excluded files, in format known as 'no path resolution'.
 	my $refExcNpr = $objConfig->get_excluded_npr();
+	# Remove excluded files from filtered candidates.
 	my $refNprFilteredCandidates = $objUtility->removeElements($refExcNpr, $refFilteredCandidates);
+	# Return the result.
 	return $refNprFilteredCandidates;
 }
-	my $refNprFilteredCandidates = candidates_for_processing($current_dir, $explore_dir, $objGS, $objConfig);
+	my $refNprFilteredCandidates = candidates_for_processing($current_dir, $explore_dir, $objConfig);
 
 	# A ref to an array of the candidates that should be processed is in: $refNprFilteredCandidates
 	foreach my $aFile_input (@$refNprFilteredCandidates)
