@@ -43,6 +43,10 @@
 # for single file mode (-f).
 # @change_history 2017-02-09, February 9, 2017. Added remote_repo_compare_single.
 # It is wrapped now by a remote_repo_compare.
+# @change_history 2017-02-09, February 9, 2017. Adjusted all mode with call to sub
+# remote_repo_compare.  Added logger info on excluded files and candidates for
+# processing.  All of this is to refactor single file and all mode into something
+# more unified and more DRY. @todo need to remove logically removed code (0==1).
 
 use strict;
 use Modern::Perl;
@@ -249,13 +253,27 @@ sub candidates_for_processing {
 
 	# Get an array reference for those excluded files, in format known as 'no path resolution'.
 	my $refExcNpr = $objConfig->get_excluded_npr();
+
+	$logger->info('... ... excluded files');
+	foreach my $exf (@$refExcNpr) {
+		$logger->info('... ... ... excluded:'.$exf);
+	}
+	$logger->info('... ... end excluded files');
+
 	# Remove excluded files from filtered candidates.
 	my $refNprFilteredCandidates = $objUtility->removeElements($refExcNpr, $refFilteredCandidates);
 	# Return the result.
+	$logger->info('... ... candidates for processing');
+	foreach my $npf (@$refNprFilteredCandidates) {
+		$logger->info('... ... ... filtered candidate:'.$npf);
+	}
+	$logger->info('... ... end candidates for processing');
 	return $refNprFilteredCandidates;
 }
 	my $refNprFilteredCandidates = candidates_for_processing($current_dir, $explore_dir, $objConfig);
 
+	remote_repo_compare($refNprFilteredCandidates, $objConfig);
+	if (0==1) {
 	# A ref to an array of the candidates that should be processed is in: $refNprFilteredCandidates
 	foreach my $aFile_input (@$refNprFilteredCandidates)
 	{
@@ -274,6 +292,7 @@ sub candidates_for_processing {
 			# exit(1); # failure
 		}
 		print 'Processed ok:'.$aFile_input."\n";
+	}
 	}
 
 	print "all mode (end)..."."\n";
@@ -326,15 +345,20 @@ sub candidates_for_processing_1 {
 	remote_repo_compare($ref_candidates, $objConfig);
 }
 sub remote_repo_compare {
+	$logger->info('remote_repo_compare-start');
 	my ($ref_array_file_input, $objConfig) = @_;
 	my @array_file_input = @$ref_array_file_input;
 	foreach my $file_input (@array_file_input)
 	{
+		$logger->info('... (remote_repo_compare)file_input='.$file_input);
 		remote_repo_compare_single($file_input, $objConfig);
 	}
+	$logger->info('remote_repo_compare-end');
 }
 sub remote_repo_compare_single {
 	my ($file_input, $objConfig) = @_;
+	$logger->info('... ... remote_repo_compare_single-start');
+	$logger->info('... ... ... file_input='.$file_input);
 	### my $len_file_input = @array_file_input;
 	### if ($len_file_input == 1) {
 	###	$logger->info('... gitshapost.pl-start of single file mode');
